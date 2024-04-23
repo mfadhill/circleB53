@@ -1,7 +1,5 @@
 import { Request, Response } from "express"
 import AuthService from "../services/AuthService"
-import AuthMiddelware from "../middlewares/AuthMiddelware"
-
 
 export  default new class AuthController {
     register(req: Request, res: Response ) {
@@ -11,6 +9,9 @@ export  default new class AuthController {
         AuthService.login(req,res)
     }
     logout(req: Request, res: Response ) {
-        AuthMiddelware.logout(req,res)
+        AuthService.logout(req,res)
+    }
+    check(req: Request, res: Response ) {
+        AuthService.check(req,res)
     }
 }
