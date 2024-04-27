@@ -1,49 +1,43 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { update } from "../utils/AuthUtil";
+import { update } from "../utils/AuthUtils";
 import { v4 as uuidv4 } from "uuid"
 import * as bcyrpt from "bcrypt"
-import cloudinary from '../config'
+import cloudinary from "../config";
 import * as fs from "fs"
 
 const prisma = new PrismaClient()
 
 function isValidUUID(uuid: string): boolean {
     const UUIDRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i
-    // const UUIDRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{3}-[a-f0-9]{3}-[a-f0-9]{12}$/i
+   
     return UUIDRegex.test(uuid)
 }
 
-export default new class UserService {
+export default new class UserSevice{
     private readonly UserRepository = prisma.user
     private readonly ThreadRepository = prisma.thread
     private readonly LikeRepository = prisma.like
     private readonly ReplyRepository = prisma.reply
     private readonly UserFollowingRepository = prisma.userFollowing
 
+    async findAll(req: Request, res: Response):Promise<Response>{
+        try{
+        const page = parseInt(req.params.page) || 1;
+        const pageSize = 10
 
-    async findAll(req: Request, res: Response): Promise<Response> {
-        try {
-            const page = parseInt(req.params.page) || 1;
-            const pageSize = 10
+        const skip = (page - 1) * pageSize
 
-            const skip = (page - 1) * pageSize
+        const users = await this.UserRepository.findMany({
+            skip,
+            take: pageSize
+        })
+        
+        const totalUsers = await this.UserRepository.count()
 
-            const users = await this.UserRepository.findMany({
-                skip,
-                take: pageSize
-            })
+        const totalPages = Math.ceil(totalUsers / pageSize)
 
-            // Menghitung total user yang ada di database (unbtuk pagination)
-            const totalUsers = await this.UserRepository.count()
-
-            // Menghitung jumlah halaman berdasarkan jumlah user keseluruhan
-            const totalPages = Math.ceil(totalUsers / pageSize)
-            // const totalPages = Math.floor(totalUsers / pageSize)
-
-            if (page > totalPages) return res.status(404).json({ message: "page not found" })
-            // Ketika user melakukan input page melebihi kapasitas page yang tersedia
-            // sistem akan mengeluarkan error bahwa halaman itu gak ada
+        if (page > totalPages) return res.status(404).json({ message: "page not found" })
 
             const userss = {
                 users,
@@ -63,12 +57,11 @@ export default new class UserService {
             })
         } catch (error) {
             console.log(error);
-            return res.status(500).json({ message: error })
-        }
+            return res.status(500).json({ message: error })}
     }
 
-    async findByID(req: Request, res: Response): Promise<Response> {
-        try {
+    async findById(req: Request, res:Response):Promise<Response>{
+        try{
             const userId = req.params.userId
 
             if (!isValidUUID(userId)) {
@@ -81,7 +74,7 @@ export default new class UserService {
                 },
                 include: {
                     threads: true,
-                    likes: true,
+                    Likes: true,
                     replies: true,
                     following: true,
                     follower: true,
@@ -96,16 +89,13 @@ export default new class UserService {
                 message: "Find By ID User Success",
                 data: users
             })
-
-        } catch (error) {
+        }catch (error) {
             console.log(error);
-            return res.status(500).json({ message: error })
-        }
+            return res.status(500).json({ message: error })}
     }
 
-    async findByName(req: Request, res: Response): Promise<Response> {
-        try {
-
+    async findByName (req: Request, res:Response): Promise<Response>{
+        try{
             const name = req.params.name
 
             const user = await this.UserRepository.findMany({
@@ -122,35 +112,35 @@ export default new class UserService {
                 message: "Find By Name User Success",
                 data: user
             })
-
-        } catch (error) {
+    
+        }catch (error) {
             console.log(error);
-            return res.status(500).json({ message: error })
-        }
+            return res.status(500).json({ message: error })}
     }
 
-    async updateWithoutImage(req: Request, res: Response): Promise<Response> {
-        try {
+    async updateWithoutImage(req: Request, res: Response): Promise<Response>{
+        try{
             const userId = req.params.userId
 
-            if (!isValidUUID(userId)) {
-                return res.status(400).json({ message: "Invalid UUID" })
-            }
-
+            if (!isValidUUID(userId))
+            return res.status(400).json({message: "Invalid UUID"})
+            
             const session = res.locals.loginSession.User.id
 
-            if (userId !== session) return res.status(403).json({ message: "Unauthorization : You're not user Login " })
-
+            if (userId !==session) 
+            return res.status(403).json({message : "Unauthorization"})
+            
             const user = await this.UserRepository.findUnique({
-                where: { id: userId }
+                where: {id: userId}
             })
 
             if (!user) return res.status(404).json({ message: "User not found" })
 
+            
             const body = req.body
             const { error } = update.validate(body)
             if (error) return res.status(400).json({ message: error.message })
-
+    
             let hashPassword = user.password
             let fullname = user.fullname
             let bio = user.bio
@@ -189,11 +179,9 @@ export default new class UserService {
                 message: "Upload Data Profile Success",
                 data: updateUser
             })
-
-        } catch (error) {
+        }catch (error) {
             console.log(error);
-            return res.status(500).json({ message: error })
-        }
+            return res.status(500).json({ message: error })}
     }
 
     async uploadProfilePicture(req: Request, res: Response): Promise<Response> {
@@ -293,7 +281,7 @@ export default new class UserService {
                 where: { id: userId },
                 include: {
                     threads: true,
-                    likes: true,
+                    Likes: true,
                     replies: true
                 }
             })
@@ -331,5 +319,4 @@ export default new class UserService {
             return res.status(500).json({ message: error })
         }
     }
-
 }

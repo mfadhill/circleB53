@@ -5,6 +5,7 @@ const prisma = new PrismaClient()
 
 function isValidUUID(uuid: string): boolean {
     const UUIDRegex = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i
+   
     return UUIDRegex.test(uuid)
 }
 
@@ -22,7 +23,7 @@ export default new class FollowService {
 
             const userId = res.locals.loginSession.User.id
 
-            if (followingId == userId) return res.status(400).json({ message: "You cant follow your self, LOL!" })
+            if (followingId == userId) return res.status(400).json({ message: "You cant follow your self" })
 
             const followingUser = await this.UserRepository.findUnique({
                 where: {
@@ -76,5 +77,4 @@ export default new class FollowService {
             return res.status(500).json({ message: error })
         }
     }
-
 }

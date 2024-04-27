@@ -1,5 +1,7 @@
 import { Request, Response } from "express"
-import AuthService from "../services/AuthService"
+import AuthService from "../services/AuthServise"
+import AuthMiddelware from "../middlewares/AuthMiddleware"
+
 
 export  default new class AuthController {
     register(req: Request, res: Response ) {

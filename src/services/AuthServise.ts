@@ -1,17 +1,18 @@
-import { Request, Response } from "express"
-import { PrismaClient } from "@prisma/client"
+import { Request, Response } from "express";
+import { PrismaClient } from "@prisma/client";
 import * as bcyrpt from "bcrypt"
 import * as jwt from "jsonwebtoken"
 import { v4 as uuidv4 } from "uuid"
-import { register, login } from "../utils/AuthUtil"
+import { register, login } from "../utils/AuthUtils"
+import { delimiter } from "path";
 
 const prisma = new PrismaClient()
 
-export default new class AuthService {
+export default new class AuthService{
     private readonly AuthRepository = prisma.user
 
-    async register(req: Request, res: Response): Promise<Response> {
-        try {
+    async register (req: Request, res: Response): Promise<Response> {
+        try{
             const body = req.body
             const { error } = register.validate(body)
             if (error) return res.status(400).json({ message: error.message })
@@ -21,13 +22,9 @@ export default new class AuthService {
 
             const hashPassword = await bcyrpt.hash(body.password, 10)
 
-            // 4367ffdf-b1a9-4169-ad1e-e86632f6ad88
             const id = uuidv4()
             const usernameUUIDpart = id.substring(0, 8).replace(/-/g, '')
             const uconvert = `user_${usernameUUIDpart}_${body.fullname.replace(/\s/g, '_')}`
-
-            // fullname : Arre Pangestu
-            // username : user_12345678_Arre_pangestu
 
             const Auth = await this.AuthRepository.create({
                 data: {
@@ -47,8 +44,7 @@ export default new class AuthService {
                 message: "Register Success",
                 data: Auth
             })
-
-        } catch (error) {
+        }catch (error) {
             console.log(error);
             return res.status(500).json({ message: error })
         }
@@ -77,10 +73,10 @@ export default new class AuthService {
 
             const token = jwt.sign({ User }, 'SECRET_KEY', { expiresIn: 999999 })
 
-            return res.status(200).json({
-                code: 200,
+            return res.status(201).json({
+                code: 201,
                 status: "Success",
-                message: "Login Success",
+                message: "Register Success",
                 token
             })
         } catch (error) {
@@ -110,9 +106,9 @@ export default new class AuthService {
         }
     }
 
-    async logout(req: Request, res: Response) {
+    async logout(req: Request, res: Response): Promise<Response> {
         try {
-            localStorage.clear()
+            delete res.locals.loginSession
 
             return res.status(200).json({
                 code: 200,

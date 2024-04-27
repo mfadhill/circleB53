@@ -5,8 +5,8 @@ export default new class UserController {
     findAll(req: Request, res: Response) {
         UserService.findAll(req, res)
     }
-    findByID(req: Request, res: Response) {
-        UserService.findByID(req, res)
+    findById(req: Request, res: Response) {
+        UserService.findById(req, res)
     }
     findByName(req: Request, res: Response) {
         UserService.findByName(req, res)

@@ -1,12 +1,13 @@
-import { Request, Response } from "express"
-import ThreadService from "../services/ThreadService"
+import ThreadService from "../services/ThreadService";
+import { Request, Response } from "express";
+import ThreadsQueue from "../queue/ThreadsQueue"
 
-export default new class AuthController {
-    findAll(req: Request, res: Response) {
-        ThreadService.findAll(req, res)
+export default new class ThreadController{
+    findAll(req: Request, res: Response ) {
+        ThreadService.findAll(req,res)
     }
-    findByID(req: Request, res: Response) {
-        ThreadService.findByID(req, res)
+    findById(req: Request, res: Response) {
+        ThreadService.findById(req, res)
     }
     addThread(req: Request, res: Response) {
         ThreadService.addThread(req, res)
@@ -19,5 +20,8 @@ export default new class AuthController {
     }
     findAllRedis(req: Request, res: Response) {
         ThreadService.findAllRedis(req, res)
+    }
+    addThreadQueue(req: Request, res: Response) {
+        ThreadsQueue.addThreadQueue(req, res)
     }
 }

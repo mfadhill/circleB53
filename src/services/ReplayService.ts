@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { addthread } from "../utils/ThreadUtil";
+import { addthread } from "../utils/ThreadUtils";
 import cloudinary from "../config"
 import * as fs from "fs"
 
@@ -16,12 +16,12 @@ export default new class ReplyService {
     private readonly UserRepository = prisma.user
     private readonly ThreadRepository = prisma.thread
 
-    async addReply(req: Request, res: Response): Promise<Response> {
+    async addReply(req: Request, res: Response) {
         try {
             const threadId = req.params.threadId
 
             if (!isValidUUID(threadId)) {
-                return res.status(400).json({ error: "Invalid UUID" })
+                return res.status(400).json({ message: "Invalid UUID" })
             }
 
             const userId = res.locals.loginSession.User.id
@@ -45,45 +45,74 @@ export default new class ReplyService {
             const { error } = addthread.validate(body)
             if (error) return res.status(400).json({ message: error.message })
 
-            const image = req.file
-            let image_url = ""
+            const image = req.files
+            const imageURL: string[] = []
 
-            if (!image) {
-                image_url = ""
-            } else {
-                const cloudinaryUpload = await cloudinary.uploader.upload(image.path, {
-                    folder: "Circle53"
-                })
-                image_url = cloudinaryUpload.secure_url
-                fs.unlinkSync(image.path)
-            }
+            if(image) {
+                if(Array.isArray(image)) {
+                    Promise.all(image.map(async (data) => {
+                        const cloudinaryUpload = await cloudinary.uploader.upload(data.path, {
+                            folder: "Circle53"
+                        })
+                        imageURL.push(cloudinaryUpload.secure_url)
+                        fs.unlinkSync(data.path)
+                    })).then (async () => {
+                        const newReplies = await this.ReplyRepository.create({
+                            data: {
+                                content: body.content,
+                                image: imageURL,
+                                user: {
+                                    connect: { id: userId }
+                                },
+                                thread: {
+                                    connect: { id: threadId }
+                                }
+                            }
+                        })
+            
+                        await this.ThreadRepository.update({
+                            where: { id: threadId },
+                            data: {
+                                replies: { connect: { id: newReplies.id } }
+                            }
+                        })
+            
+                        return res.status(201).json({
+                            code: 201,
+                            status: "Add Replies Success!",
+                            data: newReplies
+                        })
+                    })
+                }
+            }else {
+                imageURL.push("")
 
-            const newReply = await this.ReplyRepository.create({
-                data: {
-                    content: body.content,
-                    image: image_url,
-                    User: {
-                        connect: { id: userId }
-                    },
-                    Thread: {
-                        connect: { id: threadId }
+                const newReplies = await this.ReplyRepository.create({
+                    data: {
+                        content: body.content,
+                        image: imageURL,
+                        user: {
+                            connect: { id: userId }
+                        },
+                        thread: {
+                            connect: { id: threadId }
+                        }
                     }
-                }
-            })
-
-            await this.ThreadRepository.update({
-                where: { id: threadId },
-                data: {
-                    replies: { connect: { id: newReply.id } }
-                }
-            })
-
-            return res.status(200).json({
-                code: 200,
-                status: "Success",
-                message: "Add Replay Success",
-                data: newReply
-            })
+                })
+    
+                await this.ThreadRepository.update({
+                    where: { id: threadId },
+                    data: {
+                        replies: { connect: { id: newReplies.id } }
+                    }
+                })
+    
+                return res.status(201).json({
+                    code: 201,
+                    status: "Add Replies Success!",
+                    data: newReplies
+                })
+            }
 
         } catch (error) {
             console.log(error);
@@ -91,7 +120,7 @@ export default new class ReplyService {
         }
     }
 
-    async updateReply(req: Request, res: Response): Promise<Response> {
+    async updateReply(req: Request, res: Response) {
         try {
             const { replyId, threadId } = req.params
 
@@ -127,45 +156,60 @@ export default new class ReplyService {
             const { error } = addthread.validate(body)
             if (error) return res.status(400).json({ message: error.message })
 
-            const image = req.file
-            let image_url = ""
+            const image = req.files
+            let content = replySelected.content
+            const imageURL: string[] = replySelected.image
 
-
-            const oldReplyData = await this.ReplyRepository.findUnique({
-                where: { id: replyId },
-                select: { image: true }
-            })
-
-            if (image) {
-                const cloudinaryUpload = await cloudinary.uploader.upload(image.path, {
-                    folder: "Circle53"
-                })
-                image_url = cloudinaryUpload.secure_url
-                fs.unlinkSync(image.path)
-
-                if (oldReplyData && oldReplyData.image) {
-                    const publicId = oldReplyData.image.split('/').pop()?.split('.')[0]
-                    await cloudinary.uploader.destroy(publicId as string)
-                }
-            } else {
-                image_url = oldReplyData?.image || ""
+            if(body.content !== undefined && body.content !== "") {
+                content = body.content
             }
 
-            const updateReply = await this.ReplyRepository.update({
-                where: { id: replyId },
-                data: {
-                    content: body.content,
-                    image: image_url,
-                    created_at: new Date()
+            if(image) {
+                if(Array.isArray(image)) {
+                    Promise.all(image.map(async (data) => {
+                        const cloudinaryUpload = await cloudinary.uploader.upload(data.path, {
+                            folder: "Circle"
+                        })
+                        imageURL.push(cloudinaryUpload.secure_url)
+                        fs.unlinkSync(data.path)
+    
+                        if(replySelected && replySelected.image) {
+                            {replySelected.image.map(async (data) => {
+                                const oldImage = data.split("/").pop()?.split(".")[0]
+                                await cloudinary.uploader.destroy(oldImage as string)
+                            })}
+                        }
+                    })).then (async () => {
+                        const updatedReplies = await this.ReplyRepository.update({
+                            where: { id: replyId },
+                            data: {
+                                content: content,
+                                image: imageURL
+                            }
+                        })
+            
+                        return res.status(200).json({
+                            code: 200,
+                            status: "Update Replies Success!",
+                            data: updatedReplies
+                        })
+                    })
+                }else {
+                    const updatedReplies = await this.ReplyRepository.update({
+                        where: { id: replyId },
+                        data: {
+                            content: content,
+                            image: imageURL
+                        }
+                    })
+        
+                    return res.status(200).json({
+                        code: 200,
+                        status: "Update Replies Success!",
+                        data: updatedReplies
+                    })
                 }
-            })
-
-            return res.status(200).json({
-                code: 200,
-                status: "Success",
-                message: "Update Replay Success",
-                data: updateReply
-            })
+            }
 
         } catch (error) {
             console.log(error);
@@ -193,9 +237,11 @@ export default new class ReplyService {
                 select: { image: true }
             })
 
-            if (oldReplyData && oldReplyData.image) {
-                const publicId = oldReplyData.image.split('/').pop()?.split('.')[0]
-                await cloudinary.uploader.destroy(publicId as string)
+            if(oldReplyData && oldReplyData.image) {
+                {oldReplyData.image.map(async (data) => {
+                    const oldImage = data.split("/").pop()?.split(".")[0]
+                    await cloudinary.uploader.destroy(oldImage as string)
+                })}
             }
 
             const deleteReply = await this.ReplyRepository.delete({

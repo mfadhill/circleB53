@@ -1,9 +1,9 @@
 import * as jwt from "jsonwebtoken"
 import { Request, Response, NextFunction } from "express"
 
-export default new class AuthMiddleware {
-    Auth(req: Request, res: Response, next: NextFunction) {
-        try {
+export default new class AuthMiddleware{
+    Auth(req: Request, res:Response, next: NextFunction){
+        try{
             const AuthorZ = req.header('Authorization')
 
             if (!AuthorZ || !AuthorZ.startsWith("Bearer ")) {
@@ -19,8 +19,9 @@ export default new class AuthMiddleware {
             } catch (error) {
                 return res.status(401).json({ message: "Token Failed" })
             }
-        } catch (error) {
-            return res.status(500).json({ Error: "Error ketika gak ada token" })
+        }catch(error){
+            return res.status(500).json({error: "Error ketika tidak ada token"})
         }
     }
+
 }
