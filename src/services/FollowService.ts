@@ -23,7 +23,7 @@ export default new class FollowService {
 
             const userId = res.locals.loginSession.User.id
 
-            if (followingId == userId) return res.status(400).json({ message: "You cant follow your self" })
+            if (followingId == userId) return res.status(400).json({ message: "You cant follow your self" }) //siapa yg memfollow sma dgan user 
 
             const followingUser = await this.UserRepository.findUnique({
                 where: {

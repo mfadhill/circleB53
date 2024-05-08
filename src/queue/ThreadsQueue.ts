@@ -37,7 +37,7 @@ export default new class ThreadsQueue {
                 if (Array.isArray(image)) {
                     await Promise.all(image.map(async (data) => {
                         const cloudinaryUpload = await cloudinary.uploader.upload(data.path, {
-                            folder: "thread_pictures"
+                            folder: "batch53"
                         })
                         imageURL.push(cloudinaryUpload.secure_url)
                         fs.unlinkSync(data.path)
