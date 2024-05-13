@@ -40,7 +40,7 @@ router.delete('/deletereply/:replyId', AuthMiddelware.Auth, ReplyController.dele
 // Thread
 router.get('/findallthread/:page', AuthMiddelware.Auth, ThreadController.findAll)
 router.get('/findthreadbyid/:threadId', AuthMiddelware.Auth, ThreadController.findById)
-router.post("/addthread/:id", AuthMiddelware.Auth, upload.array('image', 10), ThreadController.addThread)
+router.post("/addthread", AuthMiddelware.Auth, upload.array('image', 10), ThreadController.addThread)
 router.post("/updatethread/:threadId", AuthMiddelware.Auth, upload.array('image',10), ThreadController.updateThread)
 router.delete('/deletethread/:threadId', AuthMiddelware.Auth, ThreadController.deleteThread)
 
